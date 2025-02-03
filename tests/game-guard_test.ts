@@ -39,3 +39,23 @@ Clarinet.test({
     block.receipts[1].result.expectOk().expectBool(true);
   },
 });
+
+Clarinet.test({
+  name: "Verify default roles are initialized correctly",
+  async fn(chain: Chain, accounts: Map<string, Account>) {
+    const deployer = accounts.get("deployer")!;
+    
+    let memberData = chain.callReadOnlyFn(
+      "game-guard",
+      "get-member-data",
+      [types.principal(deployer.address)],
+      deployer.address
+    );
+
+    memberData.result.expectSome().expectTuple({
+      "role": types.ascii("admin"),
+      "reputation": types.uint(100),
+      "verified": types.bool(true)
+    });
+  },
+});
