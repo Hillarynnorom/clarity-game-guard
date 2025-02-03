@@ -25,6 +25,41 @@
   }
 )
 
+;; Initialize default roles
+(define-private (initialize-roles)
+  (begin
+    (map-set community-roles "admin"
+      {
+        can-invite: true,
+        can-verify: true, 
+        can-moderate: true
+      }
+    )
+    (map-set community-roles "moderator"
+      {
+        can-invite: true,
+        can-verify: true,
+        can-moderate: true  
+      }
+    )
+    (map-set community-roles "member"
+      {
+        can-invite: false,
+        can-verify: false,
+        can-moderate: false
+      }
+    )
+    (map-set members contract-owner
+      {
+        role: "admin",
+        reputation: u100,
+        join-height: block-height,
+        verified: true
+      }
+    )
+  )
+)
+
 ;; Public functions
 (define-public (join-community)
   (let ((sender tx-sender))
@@ -70,7 +105,7 @@
   )
 )
 
-;; Read only functions
+;; Read only functions 
 (define-read-only (get-member-data (member principal))
   (map-get? members member)
 )
@@ -86,3 +121,5 @@
     (get can-moderate (unwrap-panic (map-get? community-roles (get role role-data))))
   )
 )
+
+(initialize-roles)
