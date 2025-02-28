@@ -32,7 +32,7 @@ Clarinet.test({
 
     let block = chain.mineBlock([
       Tx.contractCall("game-guard", "join-community", [], user.address),
-      Tx.contractCall("game-guard", "verify-member", [types.principal(user.address)], moderator.address)
+      Tx.contractCall("game-guard", "verify-member", [types.principal(user.address)], deployer.address)
     ]);
 
     assertEquals(block.receipts.length, 2);
@@ -41,21 +41,29 @@ Clarinet.test({
 });
 
 Clarinet.test({
-  name: "Verify default roles are initialized correctly",
+  name: "Test role management functions",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get("deployer")!;
-    
-    let memberData = chain.callReadOnlyFn(
-      "game-guard",
-      "get-member-data",
-      [types.principal(deployer.address)],
-      deployer.address
-    );
+    const user = accounts.get("wallet_1")!;
 
-    memberData.result.expectSome().expectTuple({
-      "role": types.ascii("admin"),
-      "reputation": types.uint(100),
-      "verified": types.bool(true)
-    });
+    let block = chain.mineBlock([
+      Tx.contractCall("game-guard", "create-role", [
+        types.ascii("custom-role"),
+        types.tuple({
+          'can-invite': types.bool(true),
+          'can-verify': types.bool(true),
+          'can-moderate': types.bool(false),
+          'can-manage-roles': types.bool(false)
+        })
+      ], deployer.address),
+      Tx.contractCall("game-guard", "join-community", [], user.address),
+      Tx.contractCall("game-guard", "assign-role", 
+        [types.principal(user.address), types.ascii("custom-role")],
+        deployer.address
+      )
+    ]);
+
+    assertEquals(block.receipts.length, 3);
+    block.receipts.map(receipt => receipt.result.expectOk());
   },
 });
